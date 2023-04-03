@@ -9,6 +9,18 @@ import (
 
 var Default = New(os.Stdout, All)
 
+type Option int64
+
+const (
+	Date Option = 1 << iota
+	Time
+	Type
+	Tag
+	Colors
+
+	All = Date | Time | Type | Tag | Colors
+)
+
 type Logger struct {
 	writer   io.Writer
 	verbose  bool

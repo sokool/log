@@ -91,17 +91,3 @@ func (m Message) Type(colors bool) string {
 func (m Message) CreatedAt() time.Time {
 	return m.createdAt
 }
-
-type Handler func(Message)
-
-type Option int64
-
-const (
-	Date Option = 1 << iota
-	Time
-	Type
-	Tag
-	Colors
-
-	All = Date | Time | Type | Tag | Colors
-)

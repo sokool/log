@@ -7,7 +7,9 @@ import (
 	"time"
 )
 
-func WithHTTP(url string, typ string, frequency time.Duration) Handler {
+type Handler func(Message)
+
+func HTTP(url string, frequency time.Duration) Handler {
 	write := func(url string, m []Message) error {
 		body, err := json.Marshal(m)
 		if err != nil {
@@ -44,11 +46,5 @@ func WithHTTP(url string, typ string, frequency time.Duration) Handler {
 		}
 	}()
 
-	return func(m Message) {
-		if typ != "" && typ != m.typ {
-			return
-		}
-
-		ch <- m
-	}
+	return func(m Message) { ch <- m }
 }

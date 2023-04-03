@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/sokool/log/log"
+	"github.com/sokool/log"
 )
 
 func TestMessage_Render(t *testing.T) {

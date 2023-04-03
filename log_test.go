@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/sokool/log/log"
+	"github.com/sokool/log"
 )
 
 func TestNew(t *testing.T) {

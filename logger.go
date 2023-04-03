@@ -23,7 +23,7 @@ func New(w io.Writer, o Option) *Logger {
 		writer:  w,
 		colors:  w == os.Stdout,
 		verbose: true,
-		option:  Date | Time | Tag | Type | Colors,
+		option:  o,
 	}
 }
 
@@ -67,8 +67,8 @@ func (l *Logger) Write(p []byte) (n int, err error) {
 
 func (l *Logger) Printf(format string, a ...interface{}) {
 	m := NewMessage(format, a...)
-	if l.tag != "" && m.Tag != "" {
-		m.Tag = fmt.Sprintf("%s:%s", l.tag, m.Tag)
+	if l.tag != "" && m.tag != "" {
+		m.tag = fmt.Sprintf("%s:%s", l.tag, m.tag)
 	}
 
 	if _, err := l.writer.Write([]byte(m.Render(l.option) + "\n")); err != nil {

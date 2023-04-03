@@ -45,7 +45,7 @@ func WithHTTP(url string, typ string, frequency time.Duration) Handler {
 	}()
 
 	return func(m Message) {
-		if typ != "" && typ != m.Type {
+		if typ != "" && typ != m.typ {
 			return
 		}
 

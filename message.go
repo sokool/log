@@ -2,40 +2,38 @@ package log
 
 import (
 	"fmt"
-	"io"
-	"os"
 	"strings"
 	"time"
 )
 
 type Message struct {
-	Tag       string
-	Type      string
-	Text      string
-	CreatedAt time.Time
+	tag       string
+	typ       string
+	text      string
+	createdAt time.Time
 }
 
 func NewMessage(format string, args ...any) Message {
 	m := Message{
-		Text:      fmt.Sprintf(format, args...),
-		Type:      "INF",
-		CreatedAt: time.Now(),
+		text:      fmt.Sprintf(format, args...),
+		typ:       "INF",
+		createdAt: time.Now(),
 	}
-	if p := strings.Index(m.Text, ":"); p != -1 {
-		m.Text, m.Tag = m.Text[p+1:], m.Text[0:p]
+	if p := strings.Index(m.text, ":"); p != -1 {
+		m.text, m.tag = m.text[p+1:], m.text[0:p]
 	}
-	if p := strings.Index(m.Text, "dbg "); p != -1 {
-		m.Text, m.Type = m.Text[p+3:], "DBG"
-	} else if p = strings.Index(m.Text, "err "); p != -1 {
-		m.Text, m.Type = m.Text[p+3:], "ERR"
-	} else if p := strings.Index(m.Text, "inf "); p != -1 {
-		m.Text, m.Type = m.Text[p+3:], "INF"
+	if p := strings.Index(m.text, "dbg "); p != -1 {
+		m.text, m.typ = m.text[p+3:], "DBG"
+	} else if p = strings.Index(m.text, "err "); p != -1 {
+		m.text, m.typ = m.text[p+3:], "ERR"
+	} else if p := strings.Index(m.text, "inf "); p != -1 {
+		m.text, m.typ = m.text[p+3:], "INF"
 	} else if len(args) != 0 {
 		if _, ok := args[0].(error); ok {
-			m.Type = "ERR"
+			m.typ = "ERR"
 		}
 	}
-	m.Text = strings.TrimSpace(m.Text)
+	m.text = strings.TrimSpace(m.text)
 
 	return m
 }
@@ -43,50 +41,42 @@ func NewMessage(format string, args ...any) Message {
 func (m Message) Render(o Option) string {
 	var s string
 	if o&Date != 0 {
-		s += fmt.Sprintf("%s ", m.CreatedAt.Format("2006/01/02"))
+		s += fmt.Sprintf("%s ", m.createdAt.Format("2006/01/02"))
 	}
 	if o&Time != 0 {
-		s += fmt.Sprintf("%s ", m.CreatedAt.Format("15:04:05.000000"))
+		s += fmt.Sprintf("%s ", m.createdAt.Format("15:04:05.000000"))
 	}
 	if o&Type != 0 {
-		s += fmt.Sprintf("[%s] ", m.typ(o&Colors != 0))
+		s += fmt.Sprintf("[%s] ", m.Type(o&Colors != 0))
 	}
-	if o&Tag != 0 && m.Tag != "" {
-		s += fmt.Sprintf("[%s] ", m.tag(o&Colors != 0))
+	if o&Tag != 0 && m.tag != "" {
+		s += fmt.Sprintf("[%s] ", m.Tag(o&Colors != 0))
 	}
-	return fmt.Sprintf("%s%s", s, m.Text)
+	return fmt.Sprintf("%s%s", s, m.text)
 }
 
 func (m Message) String() string {
 	return m.Render(All)
 }
 
-func (m Message) WriteTo(w io.Writer) (int64, error) {
-	var s string
-	if w == os.Stdout {
-		s = m.Render(All)
-	} else {
-		s = m.Render(All)
-	}
-
-	n, err := w.Write([]byte(s))
-	return int64(n), err
+func (m Message) Text() string {
+	return m.text
 }
 
-func (m Message) tag(colors bool) string {
+func (m Message) Tag(colors bool) string {
 	if colors {
-		return fmt.Sprintf("\x1b[36;1m%s\x1b[0m", m.Tag)
+		return fmt.Sprintf("\x1b[36;1m%s\x1b[0m", m.tag)
 	}
-	return m.Tag
+	return m.tag
 }
 
-func (m Message) typ(colors bool) string {
+func (m Message) Type(colors bool) string {
 	if !colors {
-		return m.Type
+		return m.typ
 	}
 	color := "%s"
 	if colors {
-		switch m.Type {
+		switch m.typ {
 		case "INF":
 			color = "\x1b[32;1m%s\x1b[0m" // green
 		case "ERR":
@@ -95,7 +85,11 @@ func (m Message) typ(colors bool) string {
 			color = "\x1b[33;1m%s\x1b[0m" // yellow
 		}
 	}
-	return fmt.Sprintf(color, m.Type)
+	return fmt.Sprintf(color, m.typ)
+}
+
+func (m Message) CreatedAt() time.Time {
+	return m.createdAt
 }
 
 type Handler func(Message)

@@ -16,13 +16,18 @@ func TestMessage_Render(t *testing.T) {
 	}
 
 	cases := []scenario{
-		{"without type gives info", "hi", nil, "[INF] hi"},
-		{"no type and with first err argument gives err type", "oh no %s", []any{fmt.Errorf("it's not working")}, "[ERR] oh no it's not working"},
-		{"dbg type", "dbg hi", nil, "[DBG] hi"},
-		{"inf type", "inf hi", nil, "[INF] hi"},
-		{"err type", "err hi", nil, "[ERR] hi"},
-		{"abc type", "abc hi", nil, "[INF] abc hi"},
-		{"just tag", "payments: Tim balance updated", nil, "[INF] [payments] Tim balance updated"},
+		{"no type and text", "", nil, "[INF]"},
+		{"no type", "hi", nil, "[INF] hi"},
+		{"no type and with first err argument gives", "oh no %s", []any{fmt.Errorf("it's not working")}, "[ERR] oh no it's not working"},
+		{"dbg type no text", "dbg", nil, "[DBG]"},
+		{"dbg type and text", "dbg hi", nil, "[DBG] hi"},
+		{"dbg type and text and arguments", "dbg it's a test of %s and %s", []any{"debug", "args"}, "[DBG] it's a test of debug and args"},
+		{"inf type and text", "inf hi", nil, "[INF] hi"},
+		{"err type and text", "err hi", nil, "[ERR] hi"},
+		{"abc type and text", "abc hi", nil, "[INF] abc hi"},
+		{"with tag", "payments: Tim balance updated", nil, "[INF] [payments] Tim balance updated"},
+		{"with tag and no text", "payments:", nil, "[INF] [payments]"},
+		{"with multiple tags and text", "payments:billing: Tim balance updated", nil, "[INF] [payments:billing] Tim balance updated"},
 		{"tag with type", "payments:dbg hi again", nil, "[DBG] [payments] hi again"},
 	}
 

@@ -20,14 +20,14 @@ func NewMessage(format string, args ...any) Message {
 		typ:       "INF",
 		createdAt: time.Now(),
 	}
-	if p := strings.Index(m.text, ":"); p != -1 {
+	if p := strings.LastIndex(m.text, ":"); p != -1 {
 		m.text, m.tag = m.text[p+1:], m.text[0:p]
 	}
-	if p := strings.Index(m.text, "dbg "); p != -1 {
+	if p := strings.Index(m.text, "dbg"); p != -1 {
 		m.text, m.typ = m.text[p+3:], "DBG"
-	} else if p = strings.Index(m.text, "err "); p != -1 {
+	} else if p = strings.Index(m.text, "err"); p != -1 {
 		m.text, m.typ = m.text[p+3:], "ERR"
-	} else if p := strings.Index(m.text, "inf "); p != -1 {
+	} else if p := strings.Index(m.text, "inf"); p != -1 {
 		m.text, m.typ = m.text[p+3:], "INF"
 	} else if len(args) != 0 {
 		if _, ok := args[0].(error); ok {
@@ -53,7 +53,7 @@ func (m Message) Render(o Option) string {
 	if o&Tag != 0 && m.tag != "" {
 		s += fmt.Sprintf("[%s] ", m.Tag(o&Colors != 0))
 	}
-	return fmt.Sprintf("%s%s", s, m.text)
+	return strings.TrimSpace(fmt.Sprintf("%s%s", s, m.text))
 }
 
 func (m Message) String() string {

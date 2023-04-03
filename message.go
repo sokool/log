@@ -1,6 +1,7 @@
 package log
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -90,4 +91,8 @@ func (m Message) Type(colors bool) string {
 
 func (m Message) CreatedAt() time.Time {
 	return m.createdAt
+}
+
+func (m Message) MarshalJSON() ([]byte, error) {
+	return json.Marshal(m.Render(Date | Time | Tag | Type))
 }

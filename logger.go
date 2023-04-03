@@ -79,8 +79,12 @@ func (l *Logger) Write(p []byte) (n int, err error) {
 
 func (l *Logger) Printf(format string, a ...interface{}) {
 	m := NewMessage(format, a...)
-	if l.tag != "" && m.tag != "" {
-		m.tag = fmt.Sprintf("%s:%s", l.tag, m.tag)
+	if l.tag != "" {
+		if m.tag != "" {
+			m.tag = fmt.Sprintf("%s:%s", l.tag, m.tag)
+		} else {
+			m.typ = l.tag
+		}
 	}
 
 	if _, err := l.writer.Write([]byte(m.Render(l.option) + "\n")); err != nil {

@@ -24,7 +24,6 @@ const (
 type Logger struct {
 	writer   io.Writer
 	verbose  bool
-	colors   bool
 	tag      string
 	option   Option
 	location int
@@ -34,7 +33,6 @@ type Logger struct {
 func New(w io.Writer, o Option) *Logger {
 	return &Logger{
 		writer:  w,
-		colors:  w == os.Stdout,
 		verbose: true,
 		option:  o,
 	}
@@ -84,6 +82,9 @@ func (l *Logger) printf(format string, depth int, a ...interface{}) {
 		format = l.tag + ":" + format
 	}
 	m := NewMessage(format, a...)
+	if m.typ == "DBG" && !l.verbose {
+		return
+	}
 	s := m.Render(l.option, depth+l.location)
 	if _, err := l.writer.Write([]byte(s + "\n")); err != nil {
 		log.Printf("sokool:log write failed %s", err)
@@ -97,7 +98,6 @@ func (l *Logger) new() *Logger {
 	return &Logger{
 		writer:   l.writer,
 		verbose:  l.verbose,
-		colors:   l.colors,
 		tag:      l.tag,
 		handlers: l.handlers,
 		option:   l.option,

@@ -12,13 +12,20 @@ var Default = New(os.Stdout, All)
 type Option int64
 
 const (
-	Date     Option = 1 << iota // render Message with date in 2006/01/02 format
-	Time                        // render Message with time in 15:04:05.000000 format
-	Type                        // render Message with one of INF, DBG, ERR strings
-	Tag                         // render Message with tag name
-	Location                    // render Message with filename with line number
-	Colors                      //Colors render Message with colors
-	All      = Date | Time | Type | Tag | Location | Colors
+	// Date render Message with date in 2006/01/02 format
+	Date Option = 1 << iota
+	// Time render Message with time in 15:04:05.000000 format
+	Time
+	// Type render Message with one of INF, DBG, ERR strings
+	Type
+	// Tag render Message with tag name
+	Tag
+	// Location render [Message] with filename with line number
+	Location
+	//Colors render Message with colors
+	Colors
+	All  = Date | Time | Type | Tag | Location | Colors
+	None = 0
 )
 
 // Logger support three types(levels) of logging
@@ -49,11 +56,14 @@ type Logger struct {
 //
 // Option o represents what is going to be included in strings that are passed
 // into io.Writer
-func New(w io.Writer, o Option) *Logger {
+func New(w io.Writer, o ...Option) *Logger {
+	if len(o) == 0 {
+		o = append(o, All)
+	}
 	return &Logger{
 		writer:  w,
 		verbose: true,
-		option:  o,
+		option:  o[0],
 	}
 }
 

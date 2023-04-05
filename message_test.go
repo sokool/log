@@ -31,6 +31,7 @@ func TestMessage_Render(t *testing.T) {
 		{"multiple tags and text", "payments:billing: Tim balance updated", nil, "[INF] [payments:billing] Tim balance updated"},
 		{"tag and dbg type with text", "payments:dbg hi again", nil, "[DBG] [payments] hi again"},
 		{"tag with spaces are ignored", "something tricky:err is here", nil, "[ERR] something tricky: is here"},
+		{"text with tag and err message in it", "foo: info with no err type", nil, "[INF] [foo] info with no err type"},
 	}
 
 	for _, c := range cases {

@@ -25,8 +25,8 @@ and then run it with that sample snippet
 import "github.com/sokool/log"
 
 lgr := log.
-New(os.Stdout). // output is written to standard output
-Tag("foo")      // all messages are marked with tag name
+	New(os.Stdout). // output is written to standard output
+	Tag("foo")      // all messages are marked with tag name
 
 lgr.Printf("hello %s", "world")
 lgr.Printf("first: with tag name")
@@ -34,9 +34,9 @@ lgr.Printf("second:dbg with tag name and as debug")
 lgr.Printf("third:err with tage name and explicit error level")
 
 lgr = lgr.
-Tag("bar").                               // all messages are marked with bar tag name
-Options(log.Type | log.Tag | log.Colors). // no date and file location in output
-Verbose(false)                            // do not show DBG logs
+    Tag("bar").                               // all messages are marked with bar tag name
+    Options(log.Type | log.Tag | log.Colors). // no date and file location in output
+    Verbose(false)                            // do not show DBG logs
 
 lgr.Printf("now it's simple colored text with log type and tag")
 lgr.Printf("dbg this will not be printed out")

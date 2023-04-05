@@ -19,6 +19,7 @@ func TestMessage_Render(t *testing.T) {
 		{"no type and text", "", nil, "[INF]"},
 		{"no type", "hi", nil, "[INF] hi"},
 		{"no type and with first err argument gives", "oh no %s", []any{fmt.Errorf("it's not working")}, "[ERR] oh no it's not working"},
+		{"text with err message in it", "some info example with err word inside message", nil, "[INF] some info example with err word inside message"},
 		{"dbg type no text", "dbg", nil, "[DBG]"},
 		{"dbg type and text", "dbg hi", nil, "[DBG] hi"},
 		{"dbg type and text and arguments", "dbg it's a test of %s and %s", []any{"debug", "args"}, "[DBG] it's a test of debug and args"},

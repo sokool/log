@@ -72,7 +72,7 @@ func (m Message) Render(o Option, depth ...int) string {
 }
 
 func (m Message) String() string {
-	return m.Render(Date|Time|Tag|Type|Location, 8)
+	return m.Render(Date | Time | Tag | Type)
 }
 
 func (m Message) Text() string {
@@ -121,5 +121,5 @@ func (m Message) CreatedAt() time.Time {
 }
 
 func (m Message) MarshalJSON() ([]byte, error) {
-	return json.Marshal(m.Render(Date | Time | Tag | Type | Location))
+	return json.Marshal(m.String())
 }

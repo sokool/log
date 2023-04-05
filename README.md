@@ -9,7 +9,7 @@ Helps your implementation to track your code activity
 - `colored` when printing out to standard output
 - implements `io.Writer` in order to implement your own logger or just hide
   dependencies for external logging
-- has `Printf(format string, args ...any)`
+  - has `Printf(format string, args ...any)` similar to `fmt.Printf` 
 
 ## How to use it?
 

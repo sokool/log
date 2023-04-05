@@ -25,8 +25,8 @@ and then run it with that sample snippet
 import "github.com/sokool/log"
 
 lgr := log.
-	New(os.Stdout). // output is written to standard output
-	Tag("foo")      // all messages are marked with tag name
+    New(os.Stdout). // output is written to standard output
+    Tag("foo")      // all messages are marked with tag name
 
 lgr.Printf("hello %s", "world")
 lgr.Printf("first: with tag name")

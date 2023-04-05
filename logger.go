@@ -149,9 +149,9 @@ func Printf(format string, args ...interface{}) {
 }
 
 func Debugf(format string, args ...interface{}) {
-	Default.printf("dbg "+format, 4, args...)
+	Default.printf("dbg"+format, 4, args...)
 }
 
 func Errorf(format string, args ...interface{}) {
-	Default.printf("err "+format, 4, args...)
+	Default.printf("err"+format, 4, args...)
 }

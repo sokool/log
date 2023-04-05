@@ -15,13 +15,15 @@ type Message struct {
 	createdAt time.Time
 }
 
+var types = []string{"dbg", "err", "inf"}
+
 func NewMessage(format string, args ...any) Message {
 	m := Message{
 		text:      fmt.Sprintf(format, args...),
 		createdAt: time.Now(),
 	}
-	for _, n := range []string{"dbg", "err", "inf"} {
-		if p := strings.Index(m.text, n); p != -1 {
+	for _, n := range types {
+		if p := strings.Index(m.text, n); p != -1 && (p == 0 || m.text[p-1] == ':') {
 			m.text, m.typ = strings.Replace(m.text, n, "", 1), strings.ToTitle(n)
 			break
 		}

@@ -28,6 +28,7 @@ func TestMessage_Render(t *testing.T) {
 		{"abc type and text", "abc hi", nil, "[INF] abc hi"},
 		{"tag and text", "payments: Tim balance updated", nil, "[INF] [payments] Tim balance updated"},
 		{"tag and no text", "payments:", nil, "[INF] [payments]"},
+		{"multiple comas", "http: get %s", []any{"https://test.pl"}, "[INF] [http] get https://test.pl"},
 		{"multiple tags and text", "payments:billing: Tim balance updated", nil, "[INF] [payments:billing] Tim balance updated"},
 		{"tag and dbg type with text", "payments:dbg hi again", nil, "[DBG] [payments] hi again"},
 		{"tag with spaces are ignored", "something tricky:err is here", nil, "[ERR] something tricky: is here"},

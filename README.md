@@ -40,10 +40,11 @@ lgr = lgr.
 
 lgr.Printf("now it's simple colored text with log type and tag")
 lgr.Printf("dbg this will not be printed out")
+lgr.Printf("err with list of %s attributes", map[string]any{"code": 404, "message": "not found"})
 lgr.Printf("%s", fmt.Errorf("are always printed even in non-verbose option"))
 lgr.Write([]byte("by io.Writer method"))
 
 ```
 and here is an output with `Options` such as `Date`, `Time`, `Tag`, `Type` and file `Location`
 
-[![kaD03.png](https://i.yourimageshare.com/gFtS8vmdUk.webp)](https://i.yourimageshare.com/gFtS8vmdUk.webp)
+[![kaD03.png](https://i.yourimageshare.com/ktihEHeDuY.webp)](https://i.yourimageshare.com/ktihEHeDuY.webp)

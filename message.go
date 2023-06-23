@@ -148,7 +148,7 @@ func (f fields) render(color bool) string {
 		}
 
 		if color {
-			n = fmt.Sprintf("\u001B[4m\x1b[37;1m%s\x1b[0m\u001B[24m", n)
+			n = fmt.Sprintf("\u001B[4m\x1b[35;1m%s\x1b[0m\u001B[24m", n)
 		}
 		s += fmt.Sprintf("%s=%v ", n, v)
 	}

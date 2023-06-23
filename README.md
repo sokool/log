@@ -46,4 +46,4 @@ lgr.Write([]byte("by io.Writer method"))
 ```
 and here is an output with `Options` such as `Date`, `Time`, `Tag`, `Type` and file `Location`
 
-[![kaD03.png](https://yourimageshare.com/ib/gFtS8vmdUk)](https://yourimageshare.com/ib/gFtS8vmdUk)
+[![kaD03.png](https://i.yourimageshare.com/gFtS8vmdUk.webp)](https://i.yourimageshare.com/gFtS8vmdUk.webp)

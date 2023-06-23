@@ -12,14 +12,17 @@ type Message struct {
 	tag       string
 	typ       string
 	text      string
+	args      []any
 	createdAt time.Time
+	fields    fields
 }
 
 var types = []string{"dbg", "err", "inf"}
 
 func NewMessage(format string, args ...any) Message {
 	m := Message{
-		text:      fmt.Sprintf(format, args...),
+		text:      format,
+		args:      args,
 		createdAt: time.Now(),
 	}
 	for _, n := range types {
@@ -60,7 +63,7 @@ func (m Message) Render(o Option, depth ...int) string {
 		s += fmt.Sprintf("[%s] ", m.Tag(c))
 	}
 
-	s += m.text
+	s += m.Text(c)
 
 	if o&Location != 0 {
 		if len(depth) == 0 {
@@ -77,8 +80,13 @@ func (m Message) String() string {
 	return m.Render(Date | Time | Tag | Type)
 }
 
-func (m Message) Text() string {
-	return m.text
+func (m Message) Text(colors bool) string {
+	for i := range m.args {
+		if f, ok := m.args[i].(map[string]any); ok {
+			m.args[i] = fields(f).render(colors)
+		}
+	}
+	return fmt.Sprintf(m.text, m.args...)
 }
 
 func (m Message) Location(colors bool, depth int) string {
@@ -97,6 +105,7 @@ func (m Message) Tag(colors bool) string {
 	if colors {
 		return fmt.Sprintf("\x1b[36;1m%s\x1b[0m", m.tag)
 	}
+
 	return m.tag
 }
 
@@ -124,4 +133,36 @@ func (m Message) CreatedAt() time.Time {
 
 func (m Message) MarshalJSON() ([]byte, error) {
 	return json.Marshal(m.String())
+}
+
+type fields map[string]any
+
+func (f fields) render(color bool) string {
+	var s string
+	for n, v := range f {
+		switch x := v.(type) {
+		case string:
+			if strings.Contains(x, " ") {
+				v = fmt.Sprintf(`"%s"`, v)
+			}
+		}
+
+		if color {
+			n = fmt.Sprintf("\u001B[4m\x1b[37;1m%s\x1b[0m\u001B[24m", n)
+		}
+		s += fmt.Sprintf("%s=%v ", n, v)
+	}
+	return s
+}
+
+type color struct {
+	r, g, b int
+}
+
+func newColor(r, g, b int) color {
+	return color{r, g, b}
+}
+
+func (c color) text(s string) string {
+	return fmt.Sprintf("\x1b[38;5;%d;%d;%d1m%s", c.r, c.g, c.b, s)
 }

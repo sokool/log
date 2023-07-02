@@ -33,6 +33,12 @@ func TestMessage_Render(t *testing.T) {
 		{"tag and dbg type with text", "payments:dbg hi again", nil, "[DBG] [payments] hi again"},
 		{"tag with spaces are ignored", "something tricky:err is here", nil, "[ERR] something tricky: is here"},
 		{"text with tag and err message in it", "foo: info with no err type", nil, "[INF] [foo] info with no err type"},
+		{
+			"text with attributes",
+			"bar: some %s and %d int with args %s",
+			[]any{"string", 834, map[string]any{"number": 999, "string": "hello world"}},
+			`[INF] [bar] some string and 834 int with args number=999 string="hello world"`,
+		},
 	}
 
 	for _, c := range cases {

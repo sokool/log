@@ -32,4 +32,6 @@ func TestNew(t *testing.T) {
 		t.Fatalf(b.String())
 	}
 
+	x := log.Default.Options(log.Time | log.Tag | log.Colors)
+	x.Printf("bar: some text %s", map[string]any{"level": "warn", "number": 2, "text": "hello world"})
 }

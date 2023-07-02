@@ -9,19 +9,19 @@ import (
 )
 
 type Message struct {
-	tag       string
-	typ       string
-	text      string
-	args      []any
-	createdAt time.Time
-	fields    fields
+	tag        string
+	typ        string
+	text       string
+	args       []any
+	createdAt  time.Time
+	attributes Struct
 }
 
 var types = []string{"dbg", "err", "inf"}
 
-func NewMessage(format string, args ...any) Message {
+func NewMessage(text string, args ...any) Message {
 	m := Message{
-		text:      format,
+		text:      text,
 		args:      args,
 		createdAt: time.Now(),
 	}
@@ -34,6 +34,11 @@ func NewMessage(format string, args ...any) Message {
 	if len(args) != 0 && m.typ == "" {
 		if _, ok := args[0].(error); ok {
 			m.typ = "ERR"
+		}
+	}
+	for i := range args {
+		if f, ok := args[i].(map[string]any); ok {
+			m.attributes = f
 		}
 	}
 	if m.typ == "" {
@@ -76,14 +81,10 @@ func (m Message) Render(o Option, depth ...int) string {
 	return strings.TrimSpace(s)
 }
 
-func (m Message) String() string {
-	return m.Render(Date | Time | Tag | Type)
-}
-
 func (m Message) Text(colors bool) string {
 	for i := range m.args {
 		if f, ok := m.args[i].(map[string]any); ok {
-			m.args[i] = fields(f).render(colors)
+			m.args[i] = Struct(f).render(colors)
 		}
 	}
 	return fmt.Sprintf(m.text, m.args...)
@@ -131,13 +132,34 @@ func (m Message) CreatedAt() time.Time {
 	return m.createdAt
 }
 
-func (m Message) MarshalJSON() ([]byte, error) {
-	return json.Marshal(m.String())
+func (m Message) String() string {
+	return m.Render(Date | Time | Tag | Type)
 }
 
-type fields map[string]any
+func (m Message) MarshalJSON() ([]byte, error) {
+	return json.Marshal(m.Fields())
+}
 
-func (f fields) render(color bool) string {
+func (m Message) MarshalText() ([]byte, error) {
+	return []byte(m.Fields().render(false)), nil
+}
+
+func (m Message) Fields() Struct {
+	var f = Struct{
+		"tag":       m.tag,
+		"type":      m.typ,
+		"text":      m.Text(false),
+		"createdAt": m.createdAt,
+	}
+	for i := range m.attributes {
+		f[i] = m.attributes[i]
+	}
+	return f
+}
+
+type Struct map[string]any
+
+func (f Struct) render(color bool) string {
 	var s string
 	for n, v := range f {
 		switch x := v.(type) {
@@ -145,6 +167,8 @@ func (f fields) render(color bool) string {
 			if strings.Contains(x, " ") {
 				v = fmt.Sprintf(`"%s"`, v)
 			}
+		case fmt.Stringer:
+			v = fmt.Sprintf(`"%s"`, v)
 		}
 
 		if color {

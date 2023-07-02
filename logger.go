@@ -46,6 +46,7 @@ type Logger struct {
 	tag      string
 	option   Option
 	location int
+	format   string
 	handlers []Handler
 }
 
@@ -91,6 +92,11 @@ func (l *Logger) Verbose(enable bool) *Logger {
 	return n
 }
 
+func (l *Logger) Format(s string) *Logger {
+	l.format = s
+	return l
+}
+
 // Location create new Logger instance
 func (l *Logger) Location(depth int) *Logger {
 	n := l.new()
@@ -117,19 +123,31 @@ func (l *Logger) Printf(format string, a ...interface{}) {
 }
 
 func (l *Logger) printf(format string, depth int, a ...interface{}) {
+	var b []byte
+	var m Message
+	var err error
 	if l.tag != "" {
 		format = l.tag + ":" + format
 	}
-	m := NewMessage(format, a...)
-	if m.typ == "DBG" && !l.verbose {
+	if m = NewMessage(format, a...); m.typ == "DBG" && !l.verbose {
 		return
-	}
-	s := m.Render(l.option, depth+l.location)
-	if _, err := l.writer.Write([]byte(s + "\n")); err != nil {
-		log.Printf("sokool:log write failed %s", err)
 	}
 	for _, rfn := range l.handlers {
 		rfn(m)
+	}
+	switch l.format {
+	case "json":
+		b, err = m.MarshalJSON()
+	case "text":
+		b, err = m.MarshalText()
+	default:
+		b = []byte(m.Render(l.option, depth+l.location))
+	}
+	if err != nil {
+		log.Printf("sokool.log: message decode failed %s", err)
+	}
+	if _, err = l.writer.Write(append(b, '\n')); err != nil {
+		log.Printf("sokool.log: message write failed %s", err)
 	}
 }
 

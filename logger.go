@@ -40,6 +40,10 @@ const (
 //
 // ERR - when your code is a place where error is received but there is no
 // good way of handling that situation you might log it
+
+// todo
+//   - default attributes data added to each Message
+//     -
 type Logger struct {
 	writer   io.Writer
 	verbose  bool
@@ -159,6 +163,7 @@ func (l *Logger) new() *Logger {
 		handlers: l.handlers,
 		option:   l.option,
 		location: l.location,
+		format:   l.format,
 	}
 }
 

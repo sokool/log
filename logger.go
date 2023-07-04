@@ -40,10 +40,9 @@ const (
 //
 // ERR - when your code is a place where error is received but there is no
 // good way of handling that situation you might log it
-
 // todo
 //   - default attributes data added to each Message
-//     -
+//   - log.Format option
 type Logger struct {
 	writer   io.Writer
 	verbose  bool
@@ -121,19 +120,21 @@ func (l *Logger) Write(p []byte) (n int, err error) {
 	return len(p), nil
 }
 
-// Printf tbd
-func (l *Logger) Printf(format string, a ...interface{}) {
-	l.printf(format, 4, a...)
+// Printf
+// when text is json format and has no arguments a then it will be transformed
+func (l *Logger) Printf(text string, args ...any) {
+	l.printf(text, 4, args...)
 }
 
-func (l *Logger) printf(format string, depth int, a ...interface{}) {
+func (l *Logger) printf(text string, depth int, args ...any) {
 	var b []byte
 	var m Message
 	var err error
+
 	if l.tag != "" {
-		format = l.tag + ":" + format
+		text = l.tag + ":" + text
 	}
-	if m = NewMessage(format, a...); m.typ == "DBG" && !l.verbose {
+	if m = NewMessage(text, args...); m.typ == "DBG" && !l.verbose {
 		return
 	}
 	for _, rfn := range l.handlers {
@@ -167,14 +168,14 @@ func (l *Logger) new() *Logger {
 	}
 }
 
-func Printf(format string, args ...interface{}) {
+func Printf(format string, args ...any) {
 	Default.printf(format, 4, args...)
 }
 
-func Debugf(format string, args ...interface{}) {
+func Debugf(format string, args ...any) {
 	Default.printf("dbg"+format, 4, args...)
 }
 
-func Errorf(format string, args ...interface{}) {
+func Errorf(format string, args ...any) {
 	Default.printf("err"+format, 4, args...)
 }

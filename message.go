@@ -9,7 +9,7 @@ import (
 )
 
 type Message struct {
-	tag        string
+	tag        []string
 	typ        string
 	text       string
 	args       []any
@@ -17,37 +17,44 @@ type Message struct {
 	attributes Struct
 }
 
-var types = []string{"dbg", "err", "inf"}
+var types = map[string]bool{"dbg": true, "err": true, "inf": true}
 
 func NewMessage(text string, args ...any) Message {
-	m := Message{
-		text:      text,
-		args:      args,
-		createdAt: time.Now(),
-	}
-	for _, n := range types {
-		if p := strings.Index(m.text, n); p != -1 && (p == 0 || m.text[p-1] == ':') {
-			m.text, m.typ = strings.Replace(m.text, n, "", 1), strings.ToTitle(n)
-			break
-		}
-	}
-	if len(args) != 0 && m.typ == "" {
-		if _, ok := args[0].(error); ok {
+	m := Message{text: text, args: args, createdAt: time.Now(), typ: "INF"}
+	if len(m.args) == 1 {
+		if _, ok := m.args[0].(error); ok {
 			m.typ = "ERR"
 		}
 	}
-	for i := range args {
-		if f, ok := args[i].(map[string]any); ok {
+
+	if i := m.index(m.text, false); i > 0 {
+		for _, s := range strings.Split(text[:i], ":") {
+			switch s = strings.TrimSpace(s); {
+			case types[s]:
+				m.typ = strings.ToTitle(s)
+			case s != "":
+				m.tag = append(m.tag, s)
+			}
+		}
+
+		if m.text = strings.Replace(m.text, text[:i], "", 1); m.text[0] == ':' {
+			m.text = m.text[1:]
+		}
+	}
+
+	m.text = strings.TrimSpace(m.text)
+	if i := m.index(m.text, true); i >= 0 {
+		var s map[string]any
+		if json.Unmarshal([]byte(m.text[i:]), &s) == nil {
+			m.args, m.text = append(m.args, s), m.text[:i]+"%v"
+		}
+	}
+
+	for i := range m.args {
+		if f, ok := m.args[i].(map[string]any); ok {
 			m.attributes = f
 		}
 	}
-	if m.typ == "" {
-		m.typ = "INF"
-	}
-	if p := strings.LastIndex(m.text, ":"); p != -1 && !strings.Contains(m.text[0:p], " ") {
-		m.text, m.tag = m.text[p+1:], m.text[0:p]
-	}
-	m.text = strings.TrimSpace(m.text)
 
 	return m
 }
@@ -64,8 +71,8 @@ func (m Message) Render(o Option, depth ...int) string {
 	if o&Type != 0 {
 		s += fmt.Sprintf("[%s] ", m.Type(c))
 	}
-	if o&Tag != 0 && m.tag != "" {
-		s += fmt.Sprintf("[%s] ", m.Tag(c))
+	if t := m.Tag(c); o&Tag != 0 && t != "" {
+		s += fmt.Sprintf("[%s] ", t)
 	}
 
 	s += m.Text(c)
@@ -103,11 +110,11 @@ func (m Message) Location(colors bool, depth int) string {
 }
 
 func (m Message) Tag(colors bool) string {
-	if colors {
-		return fmt.Sprintf("\x1b[36;1m%s\x1b[0m", m.tag)
+	s := strings.Join(m.tag, ":")
+	if colors && s != "" {
+		return fmt.Sprintf("\x1b[36;1m%s\x1b[0m", s)
 	}
-
-	return m.tag
+	return s
 }
 
 func (m Message) Type(colors bool) string {
@@ -146,15 +153,41 @@ func (m Message) MarshalText() ([]byte, error) {
 
 func (m Message) Fields() Struct {
 	var f = Struct{
-		"tag":       m.tag,
+		"tag":       m.Tag(false),
 		"type":      m.typ,
 		"text":      m.Text(false),
+		"location":  m.Location(false, 5),
 		"createdAt": m.createdAt,
 	}
 	for i := range m.attributes {
 		f[i] = m.attributes[i]
 	}
 	return f
+}
+
+func (m Message) index(text string, js bool) int {
+	var i int
+	if i = strings.LastIndex(text, ":"); i > 0 {
+		if n := strings.LastIndex(text[:i], " "); n != -1 && n < i {
+			i = n
+		}
+	}
+
+	var b []byte
+	var p int
+	if p = strings.Index(text, "{"); p == -1 {
+		p = strings.Index(text, "[")
+	}
+	if b = []byte(text); p == -1 || (!json.Valid(b[p:])) {
+		return i
+	}
+	if js {
+		return p
+	}
+	if i > p {
+		return p
+	}
+	return i
 }
 
 type Struct map[string]any

@@ -167,8 +167,17 @@ func (m Message) Fields() Struct {
 
 func (m Message) index(text string, js bool) int {
 	var i int
+	if len(text) == 0 {
+		return 0
+	}
+	if strings.HasPrefix(text, `⇨`) || strings.HasPrefix(text, "\n") {
+		return 0
+	}
+	if text[0] == '\n' {
+		return 0
+	}
 	if i = strings.LastIndex(text, ":"); i > 0 {
-		if n := strings.LastIndex(text[:i], " "); n != -1 && n < i {
+		if n := strings.Index(text[:i], " "); n != -1 && n < i {
 			i = n
 		}
 	}

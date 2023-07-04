@@ -67,6 +67,16 @@ func TestMessage_Render(t *testing.T) {
 			output:      "[INF] [abc] hi",
 		},
 		{
+			description: "abc tag and textx",
+			input:       `test:err: some string and json {"one":1}`,
+			output:      "[ERR] [test] some string and json one=1",
+		},
+		{
+			description: "with arrow at beginning",
+			input:       "⇨ http server started on [::]:9000",
+			output:      "[INF] ⇨ http server started on [::]:9000",
+		},
+		{
 			description: "tag and text with leading white spaces",
 			input:       "payments:    Tim balance updated",
 			output:      "[INF] [payments] Tim balance updated",

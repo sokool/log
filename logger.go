@@ -49,7 +49,7 @@ type Logger struct {
 	tag      string
 	option   Option
 	location int
-	format   string
+	human    bool
 	handlers []Handler
 }
 
@@ -68,6 +68,7 @@ func New(w io.Writer, o ...Option) *Logger {
 		writer:  w,
 		verbose: true,
 		option:  o[0],
+		human:   true,
 	}
 }
 
@@ -95,8 +96,8 @@ func (l *Logger) Verbose(enable bool) *Logger {
 	return n
 }
 
-func (l *Logger) Format(s string) *Logger {
-	l.format = s
+func (l *Logger) Format(human bool) *Logger {
+	l.human = human
 	return l
 }
 
@@ -114,38 +115,54 @@ func (l *Logger) Options(o Option) *Logger {
 	return n
 }
 
+func (l *Logger) Infof(text string, args ...any) {
+	l.printf(text, "INF", 4, args...)
+}
+
+func (l *Logger) Debugf(text string, args ...any) {
+	l.printf(text, "DBG", 4, args...)
+}
+
+func (l *Logger) Errorf(text string, args ...any) {
+	l.printf(text, "ERR", 4, args...)
+}
+
 // Write tbd
 func (l *Logger) Write(p []byte) (n int, err error) {
-	l.printf(string(p), 4)
+	l.printf(string(p), "", 4)
 	return len(p), nil
 }
 
 // Printf
 // when text is json format and has no arguments a then it will be transformed
 func (l *Logger) Printf(text string, args ...any) {
-	l.printf(text, 4, args...)
+	l.printf(text, "", 4, args...)
 }
 
-func (l *Logger) printf(text string, depth int, args ...any) {
-	var b []byte
-	var m Message
-	var err error
-
+func (l *Logger) printf(text, typ string, depth int, args ...any) {
 	if l.tag != "" {
 		text = l.tag + ":" + text
 	}
-	if m = NewMessage(text, args...); m.typ == "DBG" && !l.verbose {
+	m := NewMessage(text, args...)
+	if typ != "" {
+		m.typ = typ
+	}
+	if m.typ == "DBG" && !l.verbose {
 		return
 	}
+
+	var b []byte
+	var err error
 	for _, rfn := range l.handlers {
 		rfn(m)
 	}
-	switch l.format {
-	case "json":
+	if m.typ == "DBG" && !l.verbose {
+		return
+	}
+	switch l.human {
+	case false:
 		b, err = m.MarshalJSON()
-	case "text":
-		b, err = m.MarshalText()
-	default:
+	case true:
 		b = []byte(m.Render(l.option, depth+l.location))
 	}
 	if err != nil {
@@ -164,18 +181,18 @@ func (l *Logger) new() *Logger {
 		handlers: l.handlers,
 		option:   l.option,
 		location: l.location,
-		format:   l.format,
+		human:    l.human,
 	}
 }
 
 func Printf(format string, args ...any) {
-	Default.printf(format, 4, args...)
+	Default.printf(format, "INF", 4, args...)
 }
 
 func Debugf(format string, args ...any) {
-	Default.printf("dbg"+format, 4, args...)
+	Default.printf(format, "DBG", 4, args...)
 }
 
 func Errorf(format string, args ...any) {
-	Default.printf("err"+format, 4, args...)
+	Default.printf(format, "ERR", 4, args...)
 }

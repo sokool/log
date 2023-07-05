@@ -116,30 +116,30 @@ func (l *Logger) Options(o Option) *Logger {
 }
 
 func (l *Logger) Infof(text string, args ...any) {
-	l.printf(text, "INF", 4, args...)
+	l.write(text, "INF", 4, args...)
 }
 
 func (l *Logger) Debugf(text string, args ...any) {
-	l.printf(text, "DBG", 4, args...)
+	l.write(text, "DBG", 4, args...)
 }
 
 func (l *Logger) Errorf(text string, args ...any) {
-	l.printf(text, "ERR", 4, args...)
+	l.write(text, "ERR", 4, args...)
 }
 
 // Write tbd
 func (l *Logger) Write(p []byte) (n int, err error) {
-	l.printf(string(p), "", 4)
+	l.write(string(p), "", 4)
 	return len(p), nil
 }
 
 // Printf
 // when text is json format and has no arguments a then it will be transformed
 func (l *Logger) Printf(text string, args ...any) {
-	l.printf(text, "", 4, args...)
+	l.write(text, "", 4, args...)
 }
 
-func (l *Logger) printf(text, typ string, depth int, args ...any) {
+func (l *Logger) write(text, typ string, depth int, args ...any) {
 	if l.tag != "" {
 		text = l.tag + ":" + text
 	}
@@ -186,13 +186,13 @@ func (l *Logger) new() *Logger {
 }
 
 func Printf(format string, args ...any) {
-	Default.printf(format, "INF", 4, args...)
+	Default.write(format, "INF", 4, args...)
 }
 
 func Debugf(format string, args ...any) {
-	Default.printf(format, "DBG", 4, args...)
+	Default.write(format, "DBG", 4, args...)
 }
 
 func Errorf(format string, args ...any) {
-	Default.printf(format, "ERR", 4, args...)
+	Default.write(format, "ERR", 4, args...)
 }

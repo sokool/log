@@ -9,17 +9,20 @@ import (
 )
 
 type Message struct {
-	tag        []string
+	tags       []string
 	typ        string
 	text       string
+	file       string
+	funk       string
+	line       int
 	args       []any
 	createdAt  time.Time
-	attributes Struct
+	attributes []int
 }
 
 var types = map[string]bool{"dbg": true, "err": true, "inf": true}
 
-func NewMessage(text string, args ...any) Message {
+func NewMessage(text string, deep int, args ...any) Message {
 	m := Message{text: text, args: args, createdAt: time.Now(), typ: "INF"}
 	if len(m.args) == 1 {
 		if _, ok := m.args[0].(error); ok {
@@ -33,7 +36,7 @@ func NewMessage(text string, args ...any) Message {
 			case types[s]:
 				m.typ = strings.ToTitle(s)
 			case s != "":
-				m.tag = append(m.tag, s)
+				m.tags = append(m.tags, s)
 			}
 		}
 
@@ -44,22 +47,41 @@ func NewMessage(text string, args ...any) Message {
 
 	m.text = strings.TrimSpace(m.text)
 	if i := m.index(m.text, true); i >= 0 {
-		var s map[string]any
+		var s Attributes
 		if json.Unmarshal([]byte(m.text[i:]), &s) == nil {
-			m.args, m.text = append(m.args, s), m.text[:i]+"%v"
+			m.args, m.text = append(m.args, s), m.text[:i]+"%a"
 		}
 	}
 
-	for i := range m.args {
-		if f, ok := m.args[i].(map[string]any); ok {
-			m.attributes = f
+	var i int
+	var n = len(m.args)
+	for _, s := range strings.Split(m.text, "%") {
+		if len(s) == 0 || n < i {
+			i++
+			continue
 		}
+		switch s[0:1] {
+		case "a":
+			m.attributes = append(m.attributes, i-1)
+		}
+		i++
+	}
+
+	m.text = strings.ReplaceAll(m.text, "%a", "%v")
+	// todo call it when Trace option is enabled
+	if p, n, l, ok := runtime.Caller(deep + 1); ok {
+		m.file, m.line, m.funk = n, l, runtime.FuncForPC(p).Name()
 	}
 
 	return m
 }
 
-func (m Message) Render(o Option, depth ...int) string {
+func (m Message) Render(o Option) ([]byte, error) {
+	// todo decide based on Option what fields should be attached to json output
+	if o&JSON != 0 {
+		return m.MarshalJSON()
+	}
+
 	var s string
 	var c = o&Colors != 0
 	if o&Date != 0 {
@@ -74,43 +96,53 @@ func (m Message) Render(o Option, depth ...int) string {
 	if t := m.Tag(c); o&Tag != 0 && t != "" {
 		s += fmt.Sprintf("[%s] ", t)
 	}
-
 	s += m.Text(c)
 
-	if o&Location != 0 {
-		if len(depth) == 0 {
-			depth = append(depth, 2)
-		}
-		if l := m.Location(c, depth[0]); l != "" {
+	if o&Trace != 0 {
+		if l := m.Location(c); l != "" {
 			s += fmt.Sprintf(" %s", l)
 		}
 	}
-	return strings.TrimSpace(s)
+
+	return []byte(strings.TrimSpace(s)), nil
 }
 
 func (m Message) Text(colors bool) string {
+	var n = len(m.args)
+	var args []any
 	for i := range m.args {
-		if f, ok := m.args[i].(map[string]any); ok {
-			m.args[i] = Struct(f).render(colors)
+		args = append(args, m.args[i])
+	}
+	for _, i := range m.attributes {
+		if i > n {
+			break
+		}
+		switch f := args[i].(type) {
+		case Attributes:
+			args[i] = f.render(colors)
+		case map[string]any:
+			args[i] = Attributes(f).render(colors)
+		default:
+			var s Attributes
+			b, _ := json.Marshal(f)
+			json.Unmarshal(b, &s)
+			args[i] = s.render(colors)
 		}
 	}
-	return fmt.Sprintf(m.text, m.args...)
+	return fmt.Sprintf(m.text, args...)
 }
 
-func (m Message) Location(colors bool, depth int) string {
-	if _, file, line, ok := runtime.Caller(depth); ok {
-		i := strings.LastIndex(file, "/")
-		s := fmt.Sprintf("%s:%d", file[i+1:], line)
-		if colors {
-			return fmt.Sprintf("\x1b[35;1m%s\x1b[0m", s)
-		}
-		return s
+func (m Message) Location(colors bool) string {
+	i := strings.LastIndex(m.file, "/")
+	s := fmt.Sprintf("%s:%d", m.file[i+1:], m.line)
+	if colors {
+		return fmt.Sprintf("\x1b[35;1m%s\x1b[0m", s)
 	}
-	return ""
+	return s
 }
 
 func (m Message) Tag(colors bool) string {
-	s := strings.Join(m.tag, ":")
+	s := strings.Join(m.tags, ":")
 	if colors && s != "" {
 		return fmt.Sprintf("\x1b[36;1m%s\x1b[0m", s)
 	}
@@ -140,7 +172,8 @@ func (m Message) CreatedAt() time.Time {
 }
 
 func (m Message) String() string {
-	return m.Render(Date | Time | Tag | Type)
+	b, _ := m.Render(Date | Time | Tag | Type)
+	return string(b)
 }
 
 func (m Message) MarshalJSON() ([]byte, error) {
@@ -151,18 +184,25 @@ func (m Message) MarshalText() ([]byte, error) {
 	return []byte(m.Fields().render(false)), nil
 }
 
-func (m Message) Fields() Struct {
-	var f = Struct{
-		"tag":       m.Tag(false),
-		"type":      m.typ,
-		"text":      m.Text(false),
-		"location":  m.Location(false, 5),
-		"createdAt": m.createdAt,
+func (m Message) Fields() Attributes {
+	var a []any
+	var n = len(m.args)
+	for _, i := range m.attributes {
+		if i > n {
+			break
+		}
+		a = append(a, m.args[i])
 	}
-	for i := range m.attributes {
-		f[i] = m.attributes[i]
+	return Attributes{
+		"tags": m.tags,
+		"type": m.typ,
+		"text": m.Text(false),
+		"file": m.file,
+		"func": m.funk,
+		"line": m.line,
+		"date": m.createdAt,
+		"attr": a,
 	}
-	return f
 }
 
 func (m Message) index(text string, js bool) int {
@@ -199,11 +239,11 @@ func (m Message) index(text string, js bool) int {
 	return i
 }
 
-type Struct map[string]any
+type Attributes map[string]any
 
-func (f Struct) render(color bool) string {
+func (a Attributes) render(color bool) string {
 	var s string
-	for n, v := range f {
+	for n, v := range a {
 		switch x := v.(type) {
 		case string:
 			if strings.Contains(x, " ") {

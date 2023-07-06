@@ -14,18 +14,26 @@ type Option int64
 const (
 	// Date render Message with date in 2006/01/02 format
 	Date Option = 1 << iota
+
 	// Time render Message with time in 15:04:05.000000 format
 	Time
+
 	// Type render Message with one of INF, DBG, ERR strings
 	Type
+
 	// Tag render Message with tag name
 	Tag
-	// Location render [Message] with filename with line number
-	Location
-	//Colors render Message with colors
+
+	// Trace render Message with filename and line number
+	Trace
+
+	// Colors render Message with colors
 	Colors
-	All  = Date | Time | Type | Tag | Location | Colors
-	None = 0
+
+	// JSON makes output with json format instead text
+	JSON
+
+	All = Date | Time | Type | Tag | Trace | Colors
 )
 
 // Logger support three types(levels) of logging
@@ -48,8 +56,7 @@ type Logger struct {
 	verbose  bool
 	tag      string
 	option   Option
-	location int
-	human    bool
+	trace    int
 	handlers []Handler
 }
 
@@ -67,8 +74,8 @@ func New(w io.Writer, o ...Option) *Logger {
 	return &Logger{
 		writer:  w,
 		verbose: true,
+		trace:   2,
 		option:  o[0],
-		human:   true,
 	}
 }
 
@@ -96,15 +103,10 @@ func (l *Logger) Verbose(enable bool) *Logger {
 	return n
 }
 
-func (l *Logger) Format(human bool) *Logger {
-	l.human = human
-	return l
-}
-
-// Location create new Logger instance
-func (l *Logger) Location(depth int) *Logger {
+// Trace create new Logger instance
+func (l *Logger) Trace(depth int) *Logger {
 	n := l.new()
-	n.location = depth
+	n.trace = 2 + depth
 	return n
 }
 
@@ -116,34 +118,34 @@ func (l *Logger) Options(o Option) *Logger {
 }
 
 func (l *Logger) Infof(text string, args ...any) {
-	l.write(text, "INF", 4, args...)
+	l.write(text, "INF", args...)
 }
 
 func (l *Logger) Debugf(text string, args ...any) {
-	l.write(text, "DBG", 4, args...)
+	l.write(text, "DBG", args...)
 }
 
 func (l *Logger) Errorf(text string, args ...any) {
-	l.write(text, "ERR", 4, args...)
+	l.write(text, "ERR", args...)
 }
 
 // Write tbd
 func (l *Logger) Write(p []byte) (n int, err error) {
-	l.write(string(p), "", 4)
+	l.write(string(p), "")
 	return len(p), nil
 }
 
 // Printf
 // when text is json format and has no arguments a then it will be transformed
 func (l *Logger) Printf(text string, args ...any) {
-	l.write(text, "", 4, args...)
+	l.write(text, "", args...)
 }
 
-func (l *Logger) write(text, typ string, depth int, args ...any) {
+func (l *Logger) write(text, typ string, args ...any) {
 	if l.tag != "" {
 		text = l.tag + ":" + text
 	}
-	m := NewMessage(text, args...)
+	m := NewMessage(text, l.trace, args...)
 	if typ != "" {
 		m.typ = typ
 	}
@@ -151,20 +153,14 @@ func (l *Logger) write(text, typ string, depth int, args ...any) {
 		return
 	}
 
-	var b []byte
-	var err error
 	for _, rfn := range l.handlers {
 		rfn(m)
 	}
 	if m.typ == "DBG" && !l.verbose {
 		return
 	}
-	switch l.human {
-	case false:
-		b, err = m.MarshalJSON()
-	case true:
-		b = []byte(m.Render(l.option, depth+l.location))
-	}
+
+	b, err := m.Render(l.option)
 	if err != nil {
 		log.Printf("sokool.log: message decode failed %s", err)
 	}
@@ -180,19 +176,18 @@ func (l *Logger) new() *Logger {
 		tag:      l.tag,
 		handlers: l.handlers,
 		option:   l.option,
-		location: l.location,
-		human:    l.human,
+		trace:    l.trace,
 	}
 }
 
 func Printf(format string, args ...any) {
-	Default.write(format, "INF", 4, args...)
+	Default.write(format, "INF", args...)
 }
 
 func Debugf(format string, args ...any) {
-	Default.write(format, "DBG", 4, args...)
+	Default.write(format, "DBG", args...)
 }
 
 func Errorf(format string, args ...any) {
-	Default.write(format, "ERR", 4, args...)
+	Default.write(format, "ERR", args...)
 }

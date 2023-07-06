@@ -8,6 +8,7 @@ import (
 )
 
 func TestMessage_Render(t *testing.T) {
+	type data map[string]any
 	type scenario struct {
 		description string
 		input       string
@@ -119,12 +120,24 @@ func TestMessage_Render(t *testing.T) {
 		},
 		{
 			description: "text with attributes",
-			input:       "bar: some %s and %d int with args %s",
-			args:        []any{"string", 834, map[string]any{"number": 999, "string": "hello world"}},
-			output:      `[INF] [bar] some string and 834 int with args number=999 string="hello world"`,
+			input:       "bar: some %s and %d int with args %a and here is the %d value",
+			args:        []any{"string", 834, map[string]any{"number": 999, "string": "hello world"}, 5},
+			output:      `[INF] [bar] some string and 834 int with args number=999 string="hello world"  and here is the 5 value`,
 		},
 		{
-			description: "just json",
+			description: "custom type attribute",
+			input:       "%a",
+			args:        []any{data{"a": "hello", "b": "world"}},
+			output:      `[INF] a=hello b=world`,
+		},
+		{
+			description: "string as attribute",
+			input:       "%a",
+			args:        []any{"hi"},
+			output:      `[INF] hi`,
+		},
+		{
+			description: "json as a string to attributes",
 			input:       `app:block: {"message":"nice!", "foo": "bar"}`,
 			output:      `[INF] [app:block] message=nice! foo=bar`,
 		},
@@ -137,11 +150,11 @@ func TestMessage_Render(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.description, func(t *testing.T) {
-			m := log.NewMessage(c.input)
+			m := log.NewMessage(c.input, 0)
 			if c.args != nil {
-				m = log.NewMessage(c.input, c.args...)
+				m = log.NewMessage(c.input, 0, c.args...)
 			}
-			if s := m.Render(log.Tag | log.Type); c.output != s {
+			if s, _ := m.Render(log.Tag | log.Type); c.output != string(s) {
 				t.Fatalf("expected `%s`, got `%s`", c.output, s)
 			}
 		})

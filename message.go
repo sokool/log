@@ -31,6 +31,9 @@ func NewMessage(text string, deep int, args ...any) Message {
 	if i := m.index(m.text, false); i > 0 {
 		for _, s := range strings.Split(text[:i], ":") {
 			l, ok := levels[strings.TrimSpace(s)]
+			if s == "" {
+				continue
+			}
 			if ok {
 				m.level = l
 				continue

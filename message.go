@@ -10,7 +10,7 @@ import (
 
 type Message struct {
 	tags       []string
-	typ        string
+	level      Level
 	text       string
 	file       string
 	funk       string
@@ -20,24 +20,22 @@ type Message struct {
 	attributes []int
 }
 
-var types = map[string]bool{"dbg": true, "err": true, "inf": true, "wrn": true}
-
 func NewMessage(text string, deep int, args ...any) Message {
-	m := Message{text: text, args: args, createdAt: time.Now(), typ: "INF"}
+	m := Message{text: text, args: args, createdAt: time.Now(), level: INFO}
 	if len(m.args) == 1 {
 		if _, ok := m.args[0].(error); ok {
-			m.typ = "ERR"
+			m.level = ERROR
 		}
 	}
 
 	if i := m.index(m.text, false); i > 0 {
 		for _, s := range strings.Split(text[:i], ":") {
-			switch s = strings.TrimSpace(s); {
-			case types[s]:
-				m.typ = strings.ToTitle(s)
-			case s != "":
-				m.tags = append(m.tags, s)
+			l, ok := levels[strings.TrimSpace(s)]
+			if ok {
+				m.level = l
+				continue
 			}
+			m.tags = append(m.tags, s)
 		}
 
 		if m.text = strings.Replace(m.text, text[:i], "", 1); m.text[0] == ':' {
@@ -91,9 +89,9 @@ func (m Message) Render(o Option) ([]byte, error) {
 		s += fmt.Sprintf("%s ", m.createdAt.Format("15:04:05.000000"))
 	}
 	if o&Type != 0 {
-		s += fmt.Sprintf("[%s] ", m.Type(c))
+		s += fmt.Sprintf("[%s] ", m.level.Render(true, c))
 	}
-	if t := m.Tag(c); o&Tag != 0 && t != "" {
+	if t := m.Tag(c); o&Tags != 0 && t != "" {
 		s += fmt.Sprintf("[%s] ", t)
 	}
 	s += m.Text(c)
@@ -150,23 +148,7 @@ func (m Message) Tag(colors bool) string {
 }
 
 func (m Message) Type(colors bool) string {
-	if !colors {
-		return m.typ
-	}
-	color := "%s"
-	if colors {
-		switch m.typ {
-		case "ERR":
-			color = "\x1b[31;1m%s\x1b[0m"
-		case "WRN":
-			color = "\x1b[33;1m%s\x1b[0m"
-		case "INF":
-			color = "\x1b[32;1m%s\x1b[0m"
-		case "DBG":
-			color = "\x1b[36;1m%s\x1b[0m"
-		}
-	}
-	return fmt.Sprintf(color, m.typ)
+	return m.level.Render(true, colors)
 }
 
 func (m Message) CreatedAt() time.Time {
@@ -174,7 +156,7 @@ func (m Message) CreatedAt() time.Time {
 }
 
 func (m Message) String() string {
-	b, _ := m.Render(Date | Time | Tag | Type)
+	b, _ := m.Render(Date | Time | Tags | Type)
 	return string(b)
 }
 
@@ -196,14 +178,14 @@ func (m Message) Fields() Attributes {
 		a = append(a, m.args[i])
 	}
 	return Attributes{
-		"tags": m.tags,
-		"type": m.typ,
-		"text": m.Text(false),
-		"file": m.file,
-		"func": m.funk,
-		"line": m.line,
-		"date": m.createdAt,
-		"attr": a,
+		"tags":  m.tags,
+		"level": m.level.String(),
+		"text":  m.Text(false),
+		"file":  m.file,
+		"func":  m.funk,
+		"line":  m.line,
+		"date":  m.createdAt,
+		"attr":  a,
 	}
 }
 

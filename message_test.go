@@ -159,7 +159,7 @@ func TestMessage_Render(t *testing.T) {
 			if c.args != nil {
 				m = log.NewMessage(c.input, 0, c.args...)
 			}
-			if s, _ := m.Render(log.Tag | log.Type); c.output != string(s) {
+			if s, _ := m.Render(log.Tags | log.Type); c.output != string(s) {
 				t.Fatalf("expected `%s`, got `%s`", c.output, s)
 			}
 		})

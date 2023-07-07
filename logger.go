@@ -21,8 +21,8 @@ const (
 	// Type render Message with one of INF, DBG, ERR strings
 	Type
 
-	// Tag render Message with tag name
-	Tag
+	// Tags render Message with tag name
+	Tags
 
 	// Trace render Message with filename and line number
 	Trace
@@ -33,7 +33,7 @@ const (
 	// JSON makes output with json format instead text
 	JSON
 
-	All = Date | Time | Type | Tag | Trace | Colors
+	All = Date | Time | Type | Tags | Trace | Colors
 )
 
 // Logger support three types(levels) of logging
@@ -53,7 +53,7 @@ const (
 //   - log.Format option
 type Logger struct {
 	writer   io.Writer
-	verbose  bool
+	verbose  Level
 	tag      string
 	option   Option
 	trace    int
@@ -73,13 +73,13 @@ func New(w io.Writer, o ...Option) *Logger {
 	}
 	return &Logger{
 		writer:  w,
-		verbose: true,
+		verbose: DEBUG,
 		trace:   2,
 		option:  o[0],
 	}
 }
 
-// Tag creates new instance of Logger with predefined tag name
+// Tags creates new instance of Logger with predefined tag name
 func (l *Logger) Tag(name string) *Logger {
 	n := l.new()
 	n.tag = name
@@ -97,9 +97,9 @@ func (l *Logger) Handlers(h ...Handler) *Logger {
 // Verbose create new Logger instance, switch if DBG type should be also passed
 // to io.Writer. It might be useful to keep it enabled in local, testing or
 // staging environment but on production in some cases might be disabled
-func (l *Logger) Verbose(enable bool) *Logger {
+func (l *Logger) Verbose(m Level) *Logger {
 	n := l.new()
-	n.verbose = enable
+	n.verbose = m
 	return n
 }
 
@@ -118,49 +118,45 @@ func (l *Logger) Options(o Option) *Logger {
 }
 
 func (l *Logger) Infof(text string, args ...any) {
-	l.write(text, "INF", args...)
+	l.write(text, INFO, args...)
 }
 
 func (l *Logger) Warnf(text string, args ...any) {
-	l.write(text, "WRN", args...)
+	l.write(text, WARNING, args...)
 }
 
 func (l *Logger) Debugf(text string, args ...any) {
-	l.write(text, "DBG", args...)
+	l.write(text, DEBUG, args...)
 }
 
 func (l *Logger) Errorf(text string, args ...any) {
-	l.write(text, "ERR", args...)
+	l.write(text, ERROR, args...)
 }
 
 // Write tbd
 func (l *Logger) Write(p []byte) (n int, err error) {
-	l.write(string(p), "")
+	l.write(string(p), 0)
 	return len(p), nil
 }
 
 // Printf
 // when text is json format and has no arguments a then it will be transformed
 func (l *Logger) Printf(text string, args ...any) {
-	l.write(text, "", args...)
+	l.write(text, 0, args...)
 }
 
-func (l *Logger) write(text, typ string, args ...any) {
+func (l *Logger) write(text string, typ Level, args ...any) {
 	if l.tag != "" {
 		text = l.tag + ":" + text
 	}
 	m := NewMessage(text, l.trace, args...)
-	if typ != "" {
-		m.typ = typ
+	if typ != 0 {
+		m.level = typ
 	}
-	if m.typ == "DBG" && !l.verbose {
-		return
-	}
-
 	for _, rfn := range l.handlers {
 		rfn(m)
 	}
-	if m.typ == "DBG" && !l.verbose {
+	if l.verbose < m.level {
 		return
 	}
 
@@ -185,13 +181,17 @@ func (l *Logger) new() *Logger {
 }
 
 func Printf(format string, args ...any) {
-	Default.write(format, "INF", args...)
+	Default.write(format, INFO, args...)
 }
 
 func Debugf(format string, args ...any) {
-	Default.write(format, "DBG", args...)
+	Default.write(format, DEBUG, args...)
 }
 
 func Errorf(format string, args ...any) {
-	Default.write(format, "ERR", args...)
+	Default.write(format, ERROR, args...)
+}
+
+func Warnf(format string, args ...any) {
+	Default.write(format, WARNING, args...)
 }

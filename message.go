@@ -56,16 +56,18 @@ func NewMessage(text string, deep int, args ...any) Message {
 
 	var i int
 	var n = len(m.args)
-	for _, s := range strings.Split(m.text, "%") {
-		if len(s) == 0 || n < i {
+	if n > 0 {
+		for _, s := range strings.Split(m.text, "%") {
+			if len(s) == 0 || n < i {
+				i++
+				continue
+			}
+			switch s[0:1] {
+			case "a":
+				m.attributes = append(m.attributes, i-1)
+			}
 			i++
-			continue
 		}
-		switch s[0:1] {
-		case "a":
-			m.attributes = append(m.attributes, i-1)
-		}
-		i++
 	}
 
 	m.text = strings.ReplaceAll(m.text, "%a", "%v")

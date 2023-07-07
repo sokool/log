@@ -136,6 +136,11 @@ func TestMessage_Render(t *testing.T) {
 			output:      `[INF] a=hello b=world`,
 		},
 		{
+			description: "a string",
+			input:       "a",
+			output:      `[INF] a`,
+		},
+		{
 			description: "string as attribute",
 			input:       "%a",
 			args:        []any{"hi"},

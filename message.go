@@ -145,7 +145,7 @@ func (m Message) Location(colors bool) string {
 func (m Message) Tag(colors bool) string {
 	s := strings.Join(m.tags, ":")
 	if colors && s != "" {
-		return fmt.Sprintf("\x1b[36;1m%s\x1b[0m", s)
+		return fmt.Sprintf("\x1b[34;1m%s\x1b[0m", s)
 	}
 	return s
 }

@@ -20,7 +20,7 @@ type Message struct {
 	attributes []int
 }
 
-var types = map[string]bool{"dbg": true, "err": true, "inf": true}
+var types = map[string]bool{"dbg": true, "err": true, "inf": true, "wrn": true}
 
 func NewMessage(text string, deep int, args ...any) Message {
 	m := Message{text: text, args: args, createdAt: time.Now(), typ: "INF"}
@@ -156,12 +156,14 @@ func (m Message) Type(colors bool) string {
 	color := "%s"
 	if colors {
 		switch m.typ {
-		case "INF":
-			color = "\x1b[32;1m%s\x1b[0m" // green
 		case "ERR":
-			color = "\x1b[31;1m%s\x1b[0m" // red
+			color = "\x1b[31;1m%s\x1b[0m"
+		case "WRN":
+			color = "\x1b[33;1m%s\x1b[0m"
+		case "INF":
+			color = "\x1b[32;1m%s\x1b[0m"
 		case "DBG":
-			color = "\x1b[33;1m%s\x1b[0m" // yellow
+			color = "\x1b[36;1m%s\x1b[0m"
 		}
 	}
 	return fmt.Sprintf(color, m.typ)
@@ -254,7 +256,8 @@ func (a Attributes) render(color bool) string {
 		}
 
 		if color {
-			n = fmt.Sprintf("\u001B[4m\x1b[35;1m%s\x1b[0m\u001B[24m", n)
+			n = fmt.Sprintf("\u001B[90;1m%s\u001B[0m", n)
+			v = fmt.Sprintf("\u001B[37;3m%v\u001B[0m", v)
 		}
 		s += fmt.Sprintf("%s=%v ", n, v)
 	}

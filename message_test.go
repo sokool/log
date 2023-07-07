@@ -42,9 +42,14 @@ func TestMessage_Render(t *testing.T) {
 			output:      "[DBG]",
 		},
 		{
-			description: "dbg type and text",
+			description: "debug type and text",
 			input:       "dbg: hi",
 			output:      "[DBG] hi",
+		},
+		{
+			description: "warning type and text",
+			input:       "wrn: hi",
+			output:      "[WRN] hi",
 		},
 		{
 			description: "dbg type and text and arguments",

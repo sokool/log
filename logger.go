@@ -121,6 +121,10 @@ func (l *Logger) Infof(text string, args ...any) {
 	l.write(text, "INF", args...)
 }
 
+func (l *Logger) Warnf(text string, args ...any) {
+	l.write(text, "WRN", args...)
+}
+
 func (l *Logger) Debugf(text string, args ...any) {
 	l.write(text, "DBG", args...)
 }

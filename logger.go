@@ -18,8 +18,8 @@ const (
 	// Time render Message with time in 15:04:05.000000 format
 	Time
 
-	// Type render Message with one of INF, DBG, ERR strings
-	Type
+	// Levels render Message with one of INF, DBG, ERR strings
+	Levels
 
 	// Tags render Message with tag name
 	Tags
@@ -33,7 +33,7 @@ const (
 	// JSON makes output with json format instead text
 	JSON
 
-	All = Date | Time | Type | Tags | Trace | Colors
+	All = Date | Time | Levels | Tags | Trace | Colors
 )
 
 // Logger support three types(levels) of logging
@@ -94,10 +94,8 @@ func (l *Logger) Handlers(h ...Handler) *Logger {
 	return n
 }
 
-// Verbose create new Logger instance, switch if DBG type should be also passed
-// to io.Writer. It might be useful to keep it enabled in local, testing or
-// staging environment but on production in some cases might be disabled
-func (l *Logger) Verbose(m Level) *Logger {
+// Verbosity determines what Level of logging should be delivered to io.Writer
+func (l *Logger) Verbosity(m Level) *Logger {
 	n := l.new()
 	n.verbose = m
 	return n

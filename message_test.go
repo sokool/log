@@ -125,24 +125,24 @@ func TestMessage_Render(t *testing.T) {
 		},
 		{
 			description: "text with attributes",
-			input:       "bar: some %s and %d int with args %a and here is the %d value",
+			input:       "bar: some %s and %d int with args %v and here is the %d value",
 			args:        []any{"string", 834, map[string]any{"number": 999, "string": "hello world"}, 5},
-			output:      `[INF] [bar] some string and 834 int with args number=999 string="hello world"  and here is the 5 value`,
+			output:      `[INF] [bar] some string and 834 int with args number=999 string="hello world" and here is the 5 value`,
 		},
 		{
 			description: "custom type attribute",
-			input:       "%a",
+			input:       "%v",
 			args:        []any{data{"a": "hello", "b": "world"}},
 			output:      `[INF] a=hello b=world`,
 		},
 		{
-			description: "a string",
-			input:       "a",
-			output:      `[INF] a`,
+			description: "v string",
+			input:       "v",
+			output:      `[INF] v`,
 		},
 		{
 			description: "string as attribute",
-			input:       "%a",
+			input:       "%v",
 			args:        []any{"hi"},
 			output:      `[INF] hi`,
 		},
@@ -164,7 +164,7 @@ func TestMessage_Render(t *testing.T) {
 			if c.args != nil {
 				m = log.NewMessage(c.input, 0, c.args...)
 			}
-			if s, _ := m.Render(log.Tags | log.Type); c.output != string(s) {
+			if s, _ := m.Render(log.Tags | log.Levels); c.output != string(s) {
 				t.Fatalf("expected `%s`, got `%s`", c.output, s)
 			}
 		})

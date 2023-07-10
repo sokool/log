@@ -48,29 +48,27 @@ func NewMessage(text string, deep int, args ...any) Message {
 
 	m.text = strings.TrimSpace(m.text)
 	if i := m.index(m.text, true); i >= 0 {
-		var s Attributes
+		var s Data
 		if json.Unmarshal([]byte(m.text[i:]), &s) == nil {
-			m.args, m.text = append(m.args, s), m.text[:i]+"%a"
+			m.args, m.text = append(m.args, s), m.text[:i]+"%v"
 		}
 	}
 
-	var i int
-	var n = len(m.args)
-	if n > 0 {
-		for _, s := range strings.Split(m.text, "%") {
-			if len(s) == 0 || n < i {
-				i++
+	if n := len(m.args); n > 0 {
+		for i, s := range strings.Split(m.text, "%") {
+			if n < i {
+				break
+			}
+			if len(s) < 1 {
 				continue
 			}
-			switch s[0:1] {
-			case "a":
+			if s[0:1] == "v" {
 				m.attributes = append(m.attributes, i-1)
 			}
-			i++
 		}
 	}
 
-	m.text = strings.ReplaceAll(m.text, "%a", "%v")
+	m.text = strings.ReplaceAll(m.text, "%#v", "%s")
 	// todo call it when Trace option is enabled
 	if p, n, l, ok := runtime.Caller(deep + 1); ok {
 		m.file, m.line, m.funk = n, l, runtime.FuncForPC(p).Name()
@@ -93,7 +91,7 @@ func (m Message) Render(o Option) ([]byte, error) {
 	if o&Time != 0 {
 		s += fmt.Sprintf("%s ", m.createdAt.Format("15:04:05.000000"))
 	}
-	if o&Type != 0 {
+	if o&Levels != 0 {
 		s += fmt.Sprintf("[%s] ", m.level.Render(true, c))
 	}
 	if t := m.Tag(c); o&Tags != 0 && t != "" {
@@ -121,15 +119,15 @@ func (m Message) Text(colors bool) string {
 			break
 		}
 		switch f := args[i].(type) {
-		case Attributes:
-			args[i] = f.render(colors)
+		case Data:
+			args[i] = f.properties(colors)
 		case map[string]any:
-			args[i] = Attributes(f).render(colors)
+			args[i] = Data(f).properties(colors)
 		default:
-			var s Attributes
+			var s Data
 			b, _ := json.Marshal(f)
 			json.Unmarshal(b, &s)
-			args[i] = s.render(colors)
+			args[i] = s.properties(colors)
 		}
 	}
 	return fmt.Sprintf(m.text, args...)
@@ -161,7 +159,7 @@ func (m Message) CreatedAt() time.Time {
 }
 
 func (m Message) String() string {
-	b, _ := m.Render(Date | Time | Tags | Type)
+	b, _ := m.Render(Date | Time | Tags | Levels)
 	return string(b)
 }
 
@@ -170,10 +168,10 @@ func (m Message) MarshalJSON() ([]byte, error) {
 }
 
 func (m Message) MarshalText() ([]byte, error) {
-	return []byte(m.Fields().render(false)), nil
+	return []byte(m.Fields().properties(false)), nil
 }
 
-func (m Message) Fields() Attributes {
+func (m Message) Fields() Data {
 	var a []any
 	var n = len(m.args)
 	for _, i := range m.attributes {
@@ -182,7 +180,7 @@ func (m Message) Fields() Attributes {
 		}
 		a = append(a, m.args[i])
 	}
-	return Attributes{
+	return Data{
 		"tags":  m.tags,
 		"level": m.level.String(),
 		"text":  m.Text(false),
@@ -228,9 +226,9 @@ func (m Message) index(text string, js bool) int {
 	return i
 }
 
-type Attributes map[string]any
+type Data map[string]any
 
-func (a Attributes) render(color bool) string {
+func (a Data) properties(color bool) string {
 	var s string
 	for n, v := range a {
 		switch x := v.(type) {
@@ -248,7 +246,7 @@ func (a Attributes) render(color bool) string {
 		}
 		s += fmt.Sprintf("%s=%v ", n, v)
 	}
-	return s
+	return strings.TrimSpace(s)
 }
 
 type color struct {

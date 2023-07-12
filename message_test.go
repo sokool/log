@@ -14,6 +14,7 @@ func TestMessage_Render(t *testing.T) {
 		input       string
 		args        []any
 		output      string
+		options     log.Option
 	}
 	cases := []scenario{
 		{
@@ -156,6 +157,13 @@ func TestMessage_Render(t *testing.T) {
 			input:       `live:err:{"message":"hello world", "number": 42}`,
 			output:      `[ERR] [live] message="hello world" number=42`,
 		},
+		{
+			description: "without properties in output text",
+			input:       `some:kind:wrn: raz %s dwa %v trzy %d hi %v`,
+			args:        []any{"1", log.Data{"hello": "elo"}, 3, log.Data{"foo": "bar"}},
+			options:     log.Tags | log.Levels,
+			output:      `[WRN] [some:kind] raz 1 dwa trzy 3 hi`,
+		},
 	}
 
 	for _, c := range cases {
@@ -164,7 +172,10 @@ func TestMessage_Render(t *testing.T) {
 			if c.args != nil {
 				m = log.NewMessage(c.input, 0, c.args...)
 			}
-			if s, _ := m.Render(log.Tags | log.Levels); c.output != string(s) {
+			if c.options == 0 {
+				c.options = log.Tags | log.Levels | log.Properties
+			}
+			if s, _ := m.Render(c.options); c.output != string(s) {
 				t.Fatalf("expected `%s`, got `%s`", c.output, s)
 			}
 		})

@@ -97,7 +97,7 @@ func (m Message) Render(o Option) ([]byte, error) {
 	if t := m.Tag(c); o&Tags != 0 && t != "" {
 		s += fmt.Sprintf("[%s] ", t)
 	}
-	s += m.Text(c)
+	s += m.Text(c, o&Properties != 0)
 
 	if o&Trace != 0 {
 		if l := m.Location(c); l != "" {
@@ -108,7 +108,7 @@ func (m Message) Render(o Option) ([]byte, error) {
 	return []byte(strings.TrimSpace(s)), nil
 }
 
-func (m Message) Text(colors bool) string {
+func (m Message) Text(colors, properties bool) string {
 	var n = len(m.args)
 	var args []any
 	for i := range m.args {
@@ -117,6 +117,10 @@ func (m Message) Text(colors bool) string {
 	for _, i := range m.attributes {
 		if i > n {
 			break
+		}
+		if !properties {
+			args[i] = ""
+			continue
 		}
 		switch f := args[i].(type) {
 		case Data:
@@ -130,7 +134,7 @@ func (m Message) Text(colors bool) string {
 			args[i] = s.properties(colors)
 		}
 	}
-	return fmt.Sprintf(m.text, args...)
+	return strings.ReplaceAll(fmt.Sprintf(m.text, args...), "  ", " ")
 }
 
 func (m Message) Location(colors bool) string {
@@ -183,7 +187,7 @@ func (m Message) Fields() Data {
 	return Data{
 		"tags":  m.tags,
 		"level": m.level.String(),
-		"text":  m.Text(false),
+		"text":  m.Text(false, false),
 		"file":  m.file,
 		"func":  m.funk,
 		"line":  m.line,

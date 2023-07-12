@@ -27,13 +27,16 @@ const (
 	// Trace render Message with filename and line number
 	Trace
 
+	// Properties renders %v data in a Message output string
+	Properties
+
 	// Colors render Message with colors
 	Colors
 
 	// JSON makes output with json format instead text
 	JSON
 
-	All = Date | Time | Levels | Tags | Trace | Colors
+	All = Date | Time | Levels | Tags | Trace | Properties | Colors
 )
 
 // Logger support three types(levels) of logging

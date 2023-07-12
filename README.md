@@ -38,9 +38,9 @@ lgr.Printf("third:err: with tage name and explicit error level %v", log.Data{"me
 lgr.Printf("fourth:wrn: just warning level level")
 
 lgr = lgr.
-    Tag("bar").                                             // all messages are marked with bar tag name
-    Options(log.Levels | log.Tags | log.Time | log.Colors). // colored text with tags and levels
-    Verbosity(log.WARNING)                                  // do not show DBG and INF logs
+    Tag("bar").                                                              // all messages are marked with bar tag name
+    Options(log.Levels | log.Tags | log.Time | log.Properties | log.Colors). // colored text with tags and levels
+    Verbosity(log.WARNING)                                                   // do not show DBG and INF logs
 
 lgr.Infof("ignored")
 lgr.Debugf("ignored")

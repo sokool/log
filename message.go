@@ -178,13 +178,19 @@ func (m Message) MarshalText() ([]byte, error) {
 func (m Message) Fields() Data {
 	var a []any
 	var n = len(m.args)
+	var t string
 	for _, i := range m.attributes {
 		if i > n {
 			break
 		}
 		a = append(a, m.args[i])
 	}
+
+	for i := range m.tags {
+		t += fmt.Sprintf("%s", strings.Title(m.tags[i]))
+	}
 	return Data{
+		"tag":   t,
 		"tags":  m.tags,
 		"level": m.level.String(),
 		"text":  m.Text(false, false),
@@ -252,6 +258,11 @@ func (a Data) properties(color bool) string {
 	}
 	return strings.TrimSpace(s)
 }
+
+//func (a Data) String() string {
+//	b, _ := json.MarshalIndent(a, "", "\t")
+//	return string(b)
+//}
 
 type color struct {
 	r, g, b int

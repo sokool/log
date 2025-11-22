@@ -104,6 +104,12 @@ func (l *Logger) Verbosity(m Level) *Logger {
 	return n
 }
 
+func (l *Logger) Writer(w io.Writer) *Logger {
+	n := l.new()
+	n.writer = w
+	return n
+}
+
 // Trace create new Logger instance
 func (l *Logger) Trace(depth int) *Logger {
 	n := l.new()
@@ -146,18 +152,23 @@ func (l *Logger) Printf(text string, args ...any) {
 	l.write(text, 0, args...)
 }
 
+func (l *Logger) Fatalf(text string, args ...any) {
+	l.Errorf(text, args...)
+	os.Exit(1)
+}
+
 func (l *Logger) write(text string, typ Level, args ...any) {
 	if l.tag != "" {
 		text = l.tag + ":" + text
 	}
 	m := NewMessage(text, l.trace, args...)
 	if typ != 0 {
-		m.level = typ
+		m.Level = typ
 	}
 	for _, rfn := range l.handlers {
 		rfn(m)
 	}
-	if l.verbose < m.level {
+	if l.verbose < m.Level {
 		return
 	}
 

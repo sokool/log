@@ -32,3 +32,26 @@ func TestNew(t *testing.T) {
 		t.Fatalf(b.String())
 	}
 }
+
+func TestMessage_Fields(t *testing.T) {
+	var b bytes.Buffer
+	type data = log.Data
+	j := data{
+		"foo": "yo",
+		"baz": data{
+			"hoz": data{
+				"izy": []string{"one", "two"},
+				"diz": []data{
+					{"koz": "nice", "bar": "elo"},
+				},
+			},
+		},
+	}
+	log := log.Default.Options(log.All).Writer(&b)
+	log.Printf("datacenter:location:err: system %v\nlocation %v\ninfo %v", data{"test": "yo"}, j, data{"one": "jeden"})
+	//fmt.Println(&b)
+
+	//fmt.Println(b.String())
+}
+
+type data map[string]any

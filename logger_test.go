@@ -47,11 +47,12 @@ func TestMessage_Fields(t *testing.T) {
 			},
 		},
 	}
-	log := log.Default.Options(log.All).Writer(&b)
-	log.Printf("datacenter:location:err: system %v\nlocation %v\ninfo %v", data{"test": "yo"}, j, data{"one": "jeden"})
-	//fmt.Println(&b)
+	log := log.Default.Options(log.Levels | log.Tags | log.Properties).Writer(&b)
+	log.Errorf("datacenter:location: vars %s %v location %v info %v", "test", data{"name": "yo"}, j, data{"surname": "wang"})
+	if s := b.String(); s != "[ERR] [datacenter:location] vars test name=yo location baz.hoz.diz.0.bar=elo baz.hoz.diz.0.koz=nice baz.hoz.izy.0=one baz.hoz.izy.1=two foo=yo info surname=wang\n" {
+		t.Fatal()
+	}
 
-	//fmt.Println(b.String())
 }
 
 type data map[string]any

@@ -59,17 +59,17 @@ func NewMessage(text string, deep int, args ...any) Message {
 	}
 
 	if n := len(m.ARGS); n > 0 {
-		for i, s := range strings.Split(m.text, "%") {
-			if n < i {
-				break
-			}
-			if len(s) < 1 {
+		var c int
+		for i := 0; i < len(m.text)-1; i++ {
+			if m.text[i] != '%' {
 				continue
 			}
-			if s[0:1] == "v" {
-				m.attributes = append(m.attributes, i-1)
+			if m.text[i+1] == 'v' {
+				m.attributes = append(m.attributes, c)
 			}
+			c++
 		}
+
 	}
 
 	m.text = strings.ReplaceAll(m.text, "%#v", "%s")

@@ -61,7 +61,7 @@ func NewMessage(text string, deep int, args ...any) Message {
 	if n := len(m.ARGS); n > 0 {
 		var c int
 		for i := 0; i < len(m.text)-1; i++ {
-			if m.text[i] != '%' {
+			if m.text[i] != '%' || c >= n {
 				continue
 			}
 			if m.text[i+1] == 'v' {

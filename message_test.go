@@ -10,13 +10,14 @@ import (
 
 func TestMessage_Render(t *testing.T) {
 	type key string
+	type data = map[string]any
 	const traceID key = "trace_id"
 	const method key = "method"
 	const userID key = "user_id"
 	ctx := context.WithValue(context.Background(), traceID, "1875fhsohfh08203")
 	ctx = context.WithValue(ctx, method, "GET")
 	ctx = context.WithValue(ctx, userID, 42)
-	log.SetContextData(func(ctx context.Context) log.Data {
+	log.SetContextData(func(ctx context.Context) data {
 		return log.Data{
 			"trace_id": ctx.Value(traceID),
 			"method":   ctx.Value(method),
@@ -25,7 +26,6 @@ func TestMessage_Render(t *testing.T) {
 	})
 	t.Cleanup(func() { log.SetContextData(nil) })
 
-	type data map[string]any
 	type scenario struct {
 		description string
 		input       string

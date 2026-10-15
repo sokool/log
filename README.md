@@ -8,6 +8,7 @@ Helps your implementation to track your code activity
 - `tags` that help messages be organized into logical groups
 - `colored` human readable output text
 - structural `json` output for machines, ie on production environment
+- structured logs with named properties, context extraction, and trace ID correlation
 - `traceable` will add info about file name, location, function and line number
   of called log
 - implements `io.Writer` in order to implement your own logger or just hide
@@ -17,44 +18,73 @@ Helps your implementation to track your code activity
 
 ## How to use it?
 
-just download it to your source code
+### Installation and examples
+
+Install the package:
 
 ```shell
 go get github.com/sokool/log
 ```
 
-and then run it with that sample snippet
+The example below (full program in [`foo/main.go`](foo/main.go)) shows context extraction,
+trace IDs, inline properties, log levels, and JSON output:
 
 ```go
-import "github.com/sokool/log"
+// Use a dedicated key type to avoid collisions with other packages.
+type key string
+type data = map[string]any
+const traceID key = "trace_id"
+ctx := context.WithValue(context.Background(), traceID, "1875fhsohfh08203")
 
-lgr := log.
-    New(os.Stdout). // output is written to standard output
-    Tag("foo")      // all messages are marked with tag name
-	
-lgr.Printf("hello %s", "world")
-lgr.Printf("second:dbg: with tag name and as debug")
-lgr.Printf("third:err: with tage name and explicit error level %v", log.Data{"message": "it's bad", "code": 859})
-lgr.Printf("fourth:wrn: just warning level level")
+// Set one global reader for contexts passed through %+v.
+// The recognized trace_id becomes Message.TraceID, not an inline property.
+log.SetContextData(func(ctx context.Context) data {
+	return data{"trace_id": ctx.Value(traceID)}
+})
 
+// Default options include colors, properties, trace ID and source location.
+lgr := log.New(os.Stdout).Tag("foo")
+
+// %s formats ordinary text; %+v extracts data from the context.
+// The trace ID appears as #1875fhso before the source location.
+lgr.Printf("hello %s %+v", "world", ctx)
+
+// Prefixes add message tags and select the log level.
+lgr.Printf("second:dbg: with tag name and debug level %+v", ctx)
+lgr.Printf("third:err: explicit error level %v", data{"message": "it's bad", "code": 859})
+lgr.Printf("fourth:wrn: warning level")
+
+// Configuration methods return a new logger without changing the original.
+// This variant omits date and trace information, and filters out INFO and DEBUG.
 lgr = lgr.
-    Tag("bar").                                                              // all messages are marked with bar tag name
-    Options(log.Levels | log.Tags | log.Time | log.Properties | log.Colors). // colored text with tags and levels
-    Verbosity(log.WARNING)                                                   // do not show DBG and INF logs
+	Tag("bar").
+	Options(log.Levels | log.Tags | log.Time | log.Properties | log.Colors).
+	Verbosity(log.WARNING)
 
 lgr.Infof("ignored")
 lgr.Debugf("ignored")
-lgr.Errorf("with list of %v attributes", map[string]any{"code": 404, "message": "not found"})
+
+// Object properties render inline as sorted key=value pairs.
+lgr.Errorf("with %+v attributes",
+	log.Data{"code": 404, "message": "not found"})
+
+// Logger implements io.Writer; message prefixes still select the level.
 lgr.Write([]byte("wrn: by io.Writer method"))
 
+// JSON preserves nested properties and includes the full trace ID.
+// Verbosity remains independent of the output format.
 lgr = lgr.
-    Tag("ror:nik").
-    Options(log.JSON). //
-    Verbosity(log.DEBUG)
+	Tag("ror:nik").
+	Options(log.JSON).
+	Verbosity(log.DEBUG)
 
-lgr.Printf("with %v messages %v", log.Data{"wat": "hi"}, log.Data{"qot": "there"})
+lgr.Printf("with %+v messages %+v",
+	log.Data{"wat": "hi"},
+	log.Data{"qot": "there", "details": log.Data{"count": 2}})
+
+lgr.Printf("request finished %+v", ctx)
 ```
 
-and here is an output with `Options` such as `Date`, `Time`, `Tags`, `Levels`, `Trace` and `JSON`
+Example output with colored text, shortened trace IDs, source locations, and JSON:
 
-[![kaD03.png](https://yourimageshare.com/ib/z6gS4dadrN.webp)](https://yourimageshare.com/ib/z6gS4dadrN.webp)
+[![Logger output](https://i.yourimageshare.com/rV9wnltQih.png)](https://yourimageshare.com/ib/rV9wnltQih)

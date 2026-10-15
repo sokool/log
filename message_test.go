@@ -1,6 +1,7 @@
 package log_test
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -8,6 +9,22 @@ import (
 )
 
 func TestMessage_Render(t *testing.T) {
+	type key string
+	const traceID key = "trace_id"
+	const method key = "method"
+	const userID key = "user_id"
+	ctx := context.WithValue(context.Background(), traceID, "1875fhsohfh08203")
+	ctx = context.WithValue(ctx, method, "GET")
+	ctx = context.WithValue(ctx, userID, 42)
+	log.SetContextData(func(ctx context.Context) log.Data {
+		return log.Data{
+			"trace_id": ctx.Value(traceID),
+			"method":   ctx.Value(method),
+			"user_id":  ctx.Value(userID),
+		}
+	})
+	t.Cleanup(func() { log.SetContextData(nil) })
+
 	type data map[string]any
 	type scenario struct {
 		description string
@@ -17,6 +34,19 @@ func TestMessage_Render(t *testing.T) {
 		options     log.Option
 	}
 	cases := []scenario{
+		{
+			description: "context with trace id",
+			input:       "http: request finished %+v",
+			args:        []any{ctx},
+			options:     log.Tags | log.Levels | log.Trace,
+			output:      "[INF] [http] request finished #1875fhso main.go:24",
+		},
+		{
+			description: "context with inline properties",
+			input:       "handling %+v finished",
+			args:        []any{ctx},
+			output:      "[INF] handling method=GET user_id=42 finished",
+		},
 		{
 			description: "no type and text",
 			output:      "[INF]",
@@ -76,7 +106,7 @@ func TestMessage_Render(t *testing.T) {
 		{
 			description: "abc tag and textx",
 			input:       `test:err: some string and json {"one":1}`,
-			output:      "[ERR] [test] some string and json one=1",
+			output:      `[ERR] [test] some string and json {"one":1}`,
 		},
 		{
 			description: "with arrow at beginning",
@@ -150,12 +180,12 @@ func TestMessage_Render(t *testing.T) {
 		{
 			description: "json as a string to attributes",
 			input:       `app:block: {"message":"nice!", "foo": "bar"}`,
-			output:      `[INF] [app:block] message=nice! foo=bar`,
+			output:      `[INF] [app:block] {"message":"nice!", "foo": "bar"}`,
 		},
 		{
 			description: "type text tag and as json",
 			input:       `live:err:{"message":"hello world", "number": 42}`,
-			output:      `[ERR] [live] message="hello world" number=42`,
+			output:      `[ERR] [live] {"message":"hello world", "number": 42}`,
 		},
 		{
 			description: "without properties in output text",
@@ -174,6 +204,9 @@ func TestMessage_Render(t *testing.T) {
 			}
 			if c.options == 0 {
 				c.options = log.Tags | log.Levels | log.Properties
+			}
+			if c.options&log.Trace != 0 {
+				m.File, m.Line = "main.go", 24
 			}
 			if s, _ := m.Render(c.options); c.output != string(s) {
 				t.Fatalf("expected `%s`, got `%s`", c.output, s)

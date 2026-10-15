@@ -24,10 +24,10 @@ const (
 	// Tags render Message with tag name
 	Tags
 
-	// Trace render Message with filename and line number
+	// Trace renders the shortened trace ID followed by filename and line number.
 	Trace
 
-	// Properties renders %v data in a Message output string
+	// Properties renders structured %v and %+v data in a Message output string.
 	Properties
 
 	// Colors render Message with colors

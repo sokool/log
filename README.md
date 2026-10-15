@@ -88,3 +88,7 @@ lgr.Printf("request finished %+v", ctx)
 Example output with colored text, shortened trace IDs, source locations, and JSON:
 
 [![Logger output](https://i.yourimageshare.com/rV9wnltQih.png)](https://yourimageshare.com/ib/rV9wnltQih)
+
+## License
+
+Licensed under the [Apache License, Version 2.0](LICENSE.md).

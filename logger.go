@@ -24,7 +24,7 @@ const (
 	// Tags render Message with tag name
 	Tags
 
-	// Trace renders the shortened trace ID followed by filename and line number.
+	// Trace renders the shortened trace ID after tags and the source location after the message.
 	Trace
 
 	// Properties renders structured %v and %+v data in a Message output string.

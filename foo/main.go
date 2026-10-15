@@ -24,7 +24,7 @@ func main() {
 	lgr := log.New(os.Stdout).Tag("foo")
 
 	// %s formats ordinary text; %+v extracts data from the context.
-	// The trace ID appears as #1875fhso before the source location.
+	// The trace ID appears as #1875fhso after tags, before the message.
 	lgr.Printf("hello %s %+v", "world", ctx)
 
 	// Prefixes add message tags and select the log level.

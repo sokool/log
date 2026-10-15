@@ -2,8 +2,10 @@ package log_test
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/sokool/log"
 )
@@ -18,7 +20,7 @@ func TestMessage_Render(t *testing.T) {
 	ctx = context.WithValue(ctx, method, "GET")
 	ctx = context.WithValue(ctx, userID, 42)
 	log.SetContextData(func(ctx context.Context) data {
-		return log.Data{
+		return data{
 			"trace_id": ctx.Value(traceID),
 			"method":   ctx.Value(method),
 			"user_id":  ctx.Value(userID),
@@ -35,11 +37,43 @@ func TestMessage_Render(t *testing.T) {
 	}
 	cases := []scenario{
 		{
+			description: "legacy properties override Stringer for JSON objects",
+			input:       "scheduled in %v",
+			args:        []any{jsonObject{"event": "30s", "last": 10, "next": 40}},
+			output:      "[INF] scheduled in event=30s last=10 next=40",
+		},
+		{
+			description: "explicit properties override Stringer for JSON objects",
+			input:       "scheduled in %+v",
+			args:        []any{jsonObject{"event": "30s", "last": 10, "next": 40}},
+			output:      "[INF] scheduled in event=30s last=10 next=40",
+		},
+		{
+			description: "Stringer with scalar JSON remains ordinary text",
+			input:       "clock %v",
+			args:        []any{time.Date(2026, time.October, 15, 12, 0, 0, 0, time.UTC)},
+			output:      "[INF] clock 2026-10-15 12:00:00 +0000 UTC",
+		},
+		{
 			description: "context with trace id",
 			input:       "http: request finished %+v",
 			args:        []any{ctx},
 			options:     log.Tags | log.Levels | log.Trace,
-			output:      "[INF] [http] request finished #1875fhso main.go:24",
+			output:      "[INF] [http] #1875fhso request finished main.go:24",
+		},
+		{
+			description: "colored context trace id",
+			input:       "request finished %+v",
+			args:        []any{ctx},
+			options:     log.Trace | log.Colors,
+			output:      "\x1b[95;1m#1875fhso\x1b[0m request finished \x1b[35;1mmain.go:24\x1b[0m",
+		},
+		{
+			description: "context trace id without tags",
+			input:       "request finished %+v",
+			args:        []any{ctx},
+			options:     log.Levels | log.Trace,
+			output:      "[INF] #1875fhso request finished main.go:24",
 		},
 		{
 			description: "context with inline properties",
@@ -157,7 +191,7 @@ func TestMessage_Render(t *testing.T) {
 		{
 			description: "text with attributes",
 			input:       "bar: some %s and %d int with args %v and here is the %d value",
-			args:        []any{"string", 834, map[string]any{"number": 999, "string": "hello world"}, 5},
+			args:        []any{"string", 834, data{"number": 999, "string": "hello world"}, 5},
 			output:      `[INF] [bar] some string and 834 int with args number=999 string="hello world" and here is the 5 value`,
 		},
 		{
@@ -190,7 +224,7 @@ func TestMessage_Render(t *testing.T) {
 		{
 			description: "without properties in output text",
 			input:       `some:kind:wrn: raz %s dwa %v trzy %d hi %v`,
-			args:        []any{"1", log.Data{"hello": "elo"}, 3, log.Data{"foo": "bar"}},
+			args:        []any{"1", data{"hello": "elo"}, 3, data{"foo": "bar"}},
 			options:     log.Tags | log.Levels,
 			output:      `[WRN] [some:kind] raz 1 dwa trzy 3 hi`,
 		},
@@ -213,4 +247,15 @@ func TestMessage_Render(t *testing.T) {
 			}
 		})
 	}
+}
+
+type jsonObject map[string]any
+
+func (v jsonObject) String() string {
+	b, _ := json.MarshalIndent(map[string]any(v), "", "  ")
+	return string(b)
+}
+
+func (v jsonObject) MarshalJSON() ([]byte, error) {
+	return json.Marshal(map[string]any(v))
 }

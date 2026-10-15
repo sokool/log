@@ -82,13 +82,15 @@ func (m Message) Render(o Option) ([]byte, error) {
 	if t := m.Tag(c); o&Tags != 0 && t != "" {
 		s += fmt.Sprintf("[%s] ", t)
 	}
+	if o&Trace != 0 {
+		if id := m.traceID(c); id != "" {
+			s += id + " "
+		}
+	}
 	s += m.Text(c, o&Properties != 0)
 
 	if o&Trace != 0 {
 		s = strings.TrimRight(s, " ")
-		if id := m.traceID(c); id != "" {
-			s += " " + id
-		}
 		if l := m.Location(c); l != "" {
 			s += fmt.Sprintf(" %s", l)
 		}
@@ -202,7 +204,7 @@ func (m Message) traceID(colors bool) string {
 	id = id[:min(8, len(id))]
 	text := "#" + string(id)
 	if colors {
-		return "\x1b[36;1m" + text + "\x1b[0m"
+		return "\x1b[95;1m" + text + "\x1b[0m"
 	}
 	return text
 }

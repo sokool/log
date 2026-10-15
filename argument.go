@@ -32,7 +32,7 @@ func (a *argument) prepare() {
 // Deprecated: retained for legacy %v property extraction.
 func (a *argument) deprecatedProperties() Data {
 	switch a.value.(type) {
-	case fmt.Formatter, fmt.Stringer, error:
+	case fmt.Formatter, error:
 		return nil
 	}
 	return a.objectProperties()
